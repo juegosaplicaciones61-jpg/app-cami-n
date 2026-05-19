@@ -1,10 +1,51 @@
 import React from "react";
+import { db } from "./firebase/config";
+
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  deleteDoc,
+  doc
+} from "firebase/firestore";
 
 export default function TruckFinanceApp() {
   const [activeTab, setActiveTab] = React.useState("dashboard");
 
   const [income, setIncome] = React.useState([]);
   const [expenses, setExpenses] = React.useState([]);
+  React.useEffect(() => {
+
+  const unsubscribeIncome = onSnapshot(
+    collection(db, "income"),
+    (snapshot) => {
+      const incomeData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setIncome(incomeData);
+    }
+  );
+
+  const unsubscribeExpenses = onSnapshot(
+    collection(db, "expenses"),
+    (snapshot) => {
+      const expensesData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setExpenses(expensesData);
+    }
+  );
+
+  return () => {
+    unsubscribeIncome();
+    unsubscribeExpenses();
+  };
+
+}, []);
 
   const [incomeForm, setIncomeForm] = React.useState({
     client: "",
@@ -32,51 +73,54 @@ export default function TruckFinanceApp() {
 
   const netProfit = totalIncome - totalExpenses;
 
-  const addIncome = () => {
-    if (!incomeForm.client || !incomeForm.value) return;
+const addIncome = async () => {
 
-    setIncome([
-      ...income,
-      {
-        id: Date.now(),
-        ...incomeForm,
-      },
-    ]);
+  if (!incomeForm.client || !incomeForm.value) return;
 
-    setIncomeForm({
-      client: "",
-      route: "",
-      value: "",
-      date: "",
-    });
-  };
+  await addDoc(collection(db, "income"), {
+    client: incomeForm.client,
+    route: incomeForm.route,
+    value: incomeForm.value,
+    date: incomeForm.date,
+  });
 
-  const addExpense = () => {
-    if (!expenseForm.type || !expenseForm.value) return;
+  setIncomeForm({
+    client: "",
+    route: "",
+    value: "",
+    date: "",
+  });
 
-    setExpenses([
-      ...expenses,
-      {
-        id: Date.now(),
-        ...expenseForm,
-      },
-    ]);
+};
+const addExpense = async () => {
 
-    setExpenseForm({
-      type: "",
-      description: "",
-      value: "",
-      date: "",
-    });
-  };
+  if (!expenseForm.type || !expenseForm.value) return;
 
-  const deleteIncome = (id) => {
-    setIncome(income.filter((item) => item.id !== id));
-  };
+  await addDoc(collection(db, "expenses"), {
+    type: expenseForm.type,
+    description: expenseForm.description,
+    value: expenseForm.value,
+    date: expenseForm.date,
+  });
 
-  const deleteExpense = (id) => {
-    setExpenses(expenses.filter((item) => item.id !== id));
-  };
+  setExpenseForm({
+    type: "",
+    description: "",
+    value: "",
+    date: "",
+  });
+
+};
+const deleteIncome = async (id) => {
+
+  await deleteDoc(doc(db, "income", id));
+
+};
+const deleteExpense = async (id) => {
+
+  await deleteDoc(doc(db, "expenses", id));
+
+};
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -105,7 +149,7 @@ export default function TruckFinanceApp() {
           </button>
 
           <button
-            onClick={() => setActiveTab("income")}
+            onClick={() => setActiveTab(income)}
             className={`px-5 py-3 rounded-2xl font-semibold transition ${
               activeTab === "income"
                 ? "bg-black text-white"
@@ -116,7 +160,7 @@ export default function TruckFinanceApp() {
           </button>
 
           <button
-            onClick={() => setActiveTab("expenses")}
+            onClick={() => setActiveTab(expenses)}
             className={`px-5 py-3 rounded-2xl font-semibold transition ${
               activeTab === "expenses"
                 ? "bg-black text-white"

@@ -1,0 +1,7 @@
+CREATE TABLE income (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  client VARCHAR(255),
+  route VARCHAR(255),
+  value DECIMAL(10,2),
+  date VARCHAR(50)
+);
