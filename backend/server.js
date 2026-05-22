@@ -13,16 +13,21 @@ app.use(express.json());
 
 app.get("/income", (req, res) => {
 
-  console.log("Consultando ingresos...");
-  const sql = "SELECT * FROM income ORDER BY id DESC";
-
-  db.query(sql, (err, result) => {
+  db.query("SELECT 1", (err, result) => {
 
     if (err) {
+
+      console.log("ERROR SQL:");
       console.log(err);
-      res.status(500).send("Error obteniendo ingresos");
+
+      res.status(500).json(err);
+
     } else {
+
+      console.log("CONEXION OK");
+
       res.json(result);
+
     }
 
   });
