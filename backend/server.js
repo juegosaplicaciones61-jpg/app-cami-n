@@ -13,6 +13,7 @@ app.use(express.json());
 
 app.get("/income", (req, res) => {
 
+  console.log("Consultando ingresos...");
   const sql = "SELECT * FROM income ORDER BY id DESC";
 
   db.query(sql, (err, result) => {
