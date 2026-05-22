@@ -1,19 +1,21 @@
 const mysql = require("mysql2");
 
 const connection = mysql.createConnection({
-  host: "turntable.proxy.rlwy.net",
+  host: "TU_HOST",
   user: "root",
-  password: "GpUApIkAUYZAGoJjSlFbxEpmYbhgPOSg",
+  password: "TU_PASSWORD",
   database: "railway",
-  port: 19016
+  port: TU_PORT
 });
 
 connection.connect((err) => {
+
   if (err) {
     console.log("Error conexión:", err);
   } else {
     console.log("MySQL conectado");
   }
+
 });
 
 module.exports = connection;

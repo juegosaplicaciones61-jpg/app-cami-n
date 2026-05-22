@@ -1,65 +1,83 @@
-import React from "react";
-import { db } from "./firebase/config";
-
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  deleteDoc,
-  doc
-} from "firebase/firestore";
-
+import React, { useState, useEffect } from "react";
 export default function TruckFinanceApp() {
-  const [activeTab, setActiveTab] = React.useState("dashboard");
 
-  const [income, setIncome] = React.useState([]);
-  const [expenses, setExpenses] = React.useState([]);
-  React.useEffect(() => {
+  /* =========================
+     ESTADOS
+  ========================= */
 
-  const unsubscribeIncome = onSnapshot(
-    collection(db, "income"),
-    (snapshot) => {
-      const incomeData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-      setIncome(incomeData);
-    }
-  );
+  const [income, setIncome] = useState([]);
+  const [expenses, setExpenses] = useState([]);
 
-  const unsubscribeExpenses = onSnapshot(
-    collection(db, "expenses"),
-    (snapshot) => {
-      const expensesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setExpenses(expensesData);
-    }
-  );
-
-  return () => {
-    unsubscribeIncome();
-    unsubscribeExpenses();
-  };
-
-}, []);
-
-  const [incomeForm, setIncomeForm] = React.useState({
+  const [incomeForm, setIncomeForm] = useState({
     client: "",
     route: "",
     value: "",
     date: "",
   });
 
-  const [expenseForm, setExpenseForm] = React.useState({
+  const [expenseForm, setExpenseForm] = useState({
     type: "",
     description: "",
     value: "",
     date: "",
   });
+
+  /* =========================
+     CARGAR DATOS
+  ========================= */
+
+  useEffect(() => {
+
+    loadIncome();
+    loadExpenses();
+
+  }, []);
+
+  const loadIncome = async () => {
+
+    try {
+
+      const response = await fetch(
+        "https://app-camion-backend-production.up.railway.app/income"
+      );
+
+      const data = await response.json();
+
+      setIncome(data);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  };
+
+  const loadExpenses = async () => {
+
+    try {
+
+      const response = await fetch(
+        "https://app-camion-backend-production.up.railway.app/expenses"
+      );
+
+      const data = await response.json();
+
+      setExpenses(data);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  };
+
+  /* =========================
+     TOTALES
+  ========================= */
 
   const totalIncome = income.reduce(
     (acc, item) => acc + Number(item.value),
@@ -73,60 +91,147 @@ export default function TruckFinanceApp() {
 
   const netProfit = totalIncome - totalExpenses;
 
-const addIncome = async () => {
+  /* =========================
+     AGREGAR INGRESO
+  ========================= */
 
-  if (!incomeForm.client || !incomeForm.value) return;
+  const addIncome = async () => {
 
-  await addDoc(collection(db, "income"), {
-    client: incomeForm.client,
-    route: incomeForm.route,
-    value: incomeForm.value,
-    date: incomeForm.date,
-  });
+    try {
 
-  setIncomeForm({
-    client: "",
-    route: "",
-    value: "",
-    date: "",
-  });
+      const response = await fetch(
+        "https://app-camion-backend-production.up.railway.app/income",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(incomeForm)
+        }
+      );
 
-};
-const addExpense = async () => {
+      const data = await response.text();
 
-  if (!expenseForm.type || !expenseForm.value) return;
+      alert(data);
 
-  await addDoc(collection(db, "expenses"), {
-    type: expenseForm.type,
-    description: expenseForm.description,
-    value: expenseForm.value,
-    date: expenseForm.date,
-  });
+      setIncomeForm({
+        client: "",
+        route: "",
+        value: "",
+        date: "",
+      });
 
-  setExpenseForm({
-    type: "",
-    description: "",
-    value: "",
-    date: "",
-  });
+      loadIncome();
 
-};
-const deleteIncome = async (id) => {
+    } catch (error) {
 
-  await deleteDoc(doc(db, "income", id));
+      console.log(error);
+      alert("Error guardando ingreso");
 
-};
-const deleteExpense = async (id) => {
+    }
 
-  await deleteDoc(doc(db, "expenses", id));
+  };
 
-};
+  /* =========================
+     AGREGAR GASTO
+  ========================= */
+
+  const addExpense = async () => {
+
+    try {
+
+      const response = await fetch(
+        "https://app-camion-backend-production.up.railway.app/expenses",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(expenseForm)
+        }
+      );
+
+      const data = await response.text();
+
+      alert(data);
+
+      setExpenseForm({
+        type: "",
+        description: "",
+        value: "",
+        date: "",
+      });
+
+      loadExpenses();
+
+    } catch (error) {
+
+      console.log(error);
+      alert("Error guardando gasto");
+
+    }
+
+  };
+
+  /* =========================
+     ELIMINAR INGRESO
+  ========================= */
+
+  const deleteIncome = async (id) => {
+
+    try {
+
+      await fetch(
+        `https://app-camion-backend-production.up.railway.app/income/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      loadIncome();
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  };
+
+  /* =========================
+     ELIMINAR GASTO
+  ========================= */
+
+  const deleteExpense = async (id) => {
+
+    try {
+
+      await fetch(
+        `https://app-camion-backend-production.up.railway.app/expenses/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      loadExpenses();
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+
       <div className="max-w-7xl mx-auto">
 
+        {/* HEADER */}
+
         <div className="bg-black text-white rounded-3xl p-6 shadow-2xl mb-6">
+
           <h1 className="text-4xl font-bold">
             Control Financiero del Camión
           </h1>
@@ -134,9 +239,13 @@ const deleteExpense = async (id) => {
           <p className="text-gray-300 mt-2">
             Sistema para controlar ingresos y gastos
           </p>
+
         </div>
 
+        {/* BOTONES */}
+
         <div className="flex flex-wrap gap-3 mb-6">
+
           <button
             onClick={() => setActiveTab("dashboard")}
             className={`px-5 py-3 rounded-2xl font-semibold transition ${
@@ -149,7 +258,7 @@ const deleteExpense = async (id) => {
           </button>
 
           <button
-            onClick={() => setActiveTab(income)}
+            onClick={() => setActiveTab("income")}
             className={`px-5 py-3 rounded-2xl font-semibold transition ${
               activeTab === "income"
                 ? "bg-black text-white"
@@ -160,7 +269,7 @@ const deleteExpense = async (id) => {
           </button>
 
           <button
-            onClick={() => setActiveTab(expenses)}
+            onClick={() => setActiveTab("expenses")}
             className={`px-5 py-3 rounded-2xl font-semibold transition ${
               activeTab === "expenses"
                 ? "bg-black text-white"
@@ -169,13 +278,19 @@ const deleteExpense = async (id) => {
           >
             Gastos
           </button>
+
         </div>
 
+        {/* DASHBOARD */}
+
         {activeTab === "dashboard" && (
+
           <div>
+
             <div className="grid md:grid-cols-3 gap-6 mb-6">
 
               <div className="bg-white rounded-3xl p-6 shadow-xl">
+
                 <h2 className="text-lg font-semibold text-gray-500">
                   Ingresos Totales
                 </h2>
@@ -183,9 +298,11 @@ const deleteExpense = async (id) => {
                 <p className="text-4xl font-bold mt-4 text-green-600">
                   ${totalIncome.toLocaleString()}
                 </p>
+
               </div>
 
               <div className="bg-white rounded-3xl p-6 shadow-xl">
+
                 <h2 className="text-lg font-semibold text-gray-500">
                   Gastos Totales
                 </h2>
@@ -193,9 +310,11 @@ const deleteExpense = async (id) => {
                 <p className="text-4xl font-bold mt-4 text-red-600">
                   ${totalExpenses.toLocaleString()}
                 </p>
+
               </div>
 
               <div className="bg-white rounded-3xl p-6 shadow-xl">
+
                 <h2 className="text-lg font-semibold text-gray-500">
                   Ganancia Neta
                 </h2>
@@ -203,112 +322,23 @@ const deleteExpense = async (id) => {
                 <p className="text-4xl font-bold mt-4 text-blue-600">
                   ${netProfit.toLocaleString()}
                 </p>
+
               </div>
+
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
-
-              <div className="bg-white rounded-3xl p-6 shadow-xl">
-                <h2 className="text-2xl font-bold mb-4">
-                  Últimos Ingresos
-                </h2>
-
-                {income.length === 0 ? (
-                  <p className="text-gray-500">
-                    No hay ingresos registrados
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {income
-                      .slice(-5)
-                      .reverse()
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="border rounded-2xl p-4"
-                        >
-                          <div className="flex justify-between">
-                            <div>
-                              <h3 className="font-bold">
-                                {item.client}
-                              </h3>
-
-                              <p className="text-gray-500">
-                                {item.route}
-                              </p>
-                            </div>
-
-                            <div className="text-right">
-                              <p className="font-bold text-green-600">
-                                $
-                                {Number(item.value).toLocaleString()}
-                              </p>
-
-                              <p className="text-sm text-gray-500">
-                                {item.date}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-3xl p-6 shadow-xl">
-                <h2 className="text-2xl font-bold mb-4">
-                  Últimos Gastos
-                </h2>
-
-                {expenses.length === 0 ? (
-                  <p className="text-gray-500">
-                    No hay gastos registrados
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {expenses
-                      .slice(-5)
-                      .reverse()
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="border rounded-2xl p-4"
-                        >
-                          <div className="flex justify-between">
-                            <div>
-                              <h3 className="font-bold">
-                                {item.type}
-                              </h3>
-
-                              <p className="text-gray-500">
-                                {item.description}
-                              </p>
-                            </div>
-
-                            <div className="text-right">
-                              <p className="font-bold text-red-600">
-                                $
-                                {Number(item.value).toLocaleString()}
-                              </p>
-
-                              <p className="text-sm text-gray-500">
-                                {item.date}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
+
         )}
 
+        {/* INGRESOS */}
+
         {activeTab === "income" && (
+
           <div className="grid lg:grid-cols-2 gap-6">
 
             <div className="bg-white rounded-3xl p-6 shadow-xl">
+
               <h2 className="text-3xl font-bold mb-6">
                 Registrar Ingreso
               </h2>
@@ -368,67 +398,77 @@ const deleteExpense = async (id) => {
 
                 <button
                   onClick={addIncome}
-                  className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:opacity-90 transition"
+                  className="w-full bg-black text-white py-4 rounded-2xl font-bold"
                 >
                   Guardar Ingreso
                 </button>
+
               </div>
+
             </div>
 
             <div className="bg-white rounded-3xl p-6 shadow-xl">
+
               <h2 className="text-3xl font-bold mb-6">
                 Historial de Ingresos
               </h2>
 
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              <div className="space-y-4">
 
                 {income.map((item) => (
+
                   <div
                     key={item.id}
                     className="border rounded-2xl p-4"
                   >
-                    <div className="flex justify-between items-start gap-4">
+
+                    <div className="flex justify-between">
 
                       <div>
-                        <h3 className="font-bold text-lg">
+
+                        <h3 className="font-bold">
                           {item.client}
                         </h3>
 
-                        <p className="text-gray-500">
-                          Ruta: {item.route}
-                        </p>
+                        <p>{item.route}</p>
 
-                        <p className="text-gray-500">
-                          Fecha: {item.date}
-                        </p>
+                        <p>{item.date}</p>
+
                       </div>
 
                       <div className="text-right">
 
-                        <p className="font-bold text-green-600 text-xl">
-                          $
-                          {Number(item.value).toLocaleString()}
+                        <p className="font-bold text-green-600">
+                          ${Number(item.value).toLocaleString()}
                         </p>
 
                         <button
-                          onClick={() =>
-                            deleteIncome(item.id)
-                          }
-                          className="mt-3 bg-red-500 text-white px-4 py-2 rounded-xl"
+                          onClick={() => deleteIncome(item.id)}
+                          className="bg-red-500 text-white px-3 py-2 rounded-xl mt-2"
                         >
                           Eliminar
                         </button>
+
                       </div>
+
                     </div>
+
                   </div>
+
                 ))}
 
               </div>
+
             </div>
+
           </div>
+
         )}
 
+        {/* GASTOS */}
+
         {activeTab === "expenses" && (
+
           <div className="grid lg:grid-cols-2 gap-6">
 
             <div className="bg-white rounded-3xl p-6 shadow-xl">
@@ -439,7 +479,9 @@ const deleteExpense = async (id) => {
 
               <div className="space-y-4">
 
-                <select
+                <input
+                  type="text"
+                  placeholder="Tipo"
                   value={expenseForm.type}
                   onChange={(e) =>
                     setExpenseForm({
@@ -448,35 +490,7 @@ const deleteExpense = async (id) => {
                     })
                   }
                   className="w-full border rounded-2xl p-4"
-                >
-                  <option value="">
-                    Seleccione un tipo
-                  </option>
-
-                  <option value="Combustible">
-                    Combustible
-                  </option>
-
-                  <option value="Peajes">
-                    Peajes
-                  </option>
-
-                  <option value="Mantenimiento">
-                    Mantenimiento
-                  </option>
-
-                  <option value="Llantas">
-                    Llantas
-                  </option>
-
-                  <option value="Multas">
-                    Multas
-                  </option>
-
-                  <option value="Otros">
-                    Otros
-                  </option>
-                </select>
+                />
 
                 <input
                   type="text"
@@ -518,11 +532,13 @@ const deleteExpense = async (id) => {
 
                 <button
                   onClick={addExpense}
-                  className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:opacity-90 transition"
+                  className="w-full bg-black text-white py-4 rounded-2xl font-bold"
                 >
                   Guardar Gasto
                 </button>
+
               </div>
+
             </div>
 
             <div className="bg-white rounded-3xl p-6 shadow-xl">
@@ -531,55 +547,61 @@ const deleteExpense = async (id) => {
                 Historial de Gastos
               </h2>
 
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              <div className="space-y-4">
 
                 {expenses.map((item) => (
+
                   <div
                     key={item.id}
                     className="border rounded-2xl p-4"
                   >
-                    <div className="flex justify-between items-start gap-4">
+
+                    <div className="flex justify-between">
 
                       <div>
-                        <h3 className="font-bold text-lg">
+
+                        <h3 className="font-bold">
                           {item.type}
                         </h3>
 
-                        <p className="text-gray-500">
-                          {item.description}
-                        </p>
+                        <p>{item.description}</p>
 
-                        <p className="text-gray-500">
-                          Fecha: {item.date}
-                        </p>
+                        <p>{item.date}</p>
+
                       </div>
 
                       <div className="text-right">
 
-                        <p className="font-bold text-red-600 text-xl">
-                          $
-                          {Number(item.value).toLocaleString()}
+                        <p className="font-bold text-red-600">
+                          ${Number(item.value).toLocaleString()}
                         </p>
 
                         <button
-                          onClick={() =>
-                            deleteExpense(item.id)
-                          }
-                          className="mt-3 bg-red-500 text-white px-4 py-2 rounded-xl"
+                          onClick={() => deleteExpense(item.id)}
+                          className="bg-red-500 text-white px-3 py-2 rounded-xl mt-2"
                         >
                           Eliminar
                         </button>
+
                       </div>
+
                     </div>
+
                   </div>
+
                 ))}
 
               </div>
+
             </div>
+
           </div>
+
         )}
 
       </div>
+
     </div>
   );
+
 }
