@@ -1,36 +1,58 @@
 const express = require("express");
 const cors = require("cors");
-const db = require("./db");
+const mysql = require("mysql2");
 
 const app = express();
 
+/* =========================
+   CONFIGURACION
+========================= */
+
 app.use(cors());
 app.use(express.json());
+
+console.log("Servidor iniciando...");
+
+/* =========================
+   MYSQL RAILWAY
+========================= */
+
+const db = mysql
+  .createPool(process.env.DATABASE_URL)
+  .promise();
+
+console.log("Pool MySQL iniciado");
+
+/* =========================
+   RUTA PRINCIPAL
+========================= */
+
+app.get("/", (req, res) => {
+  res.send("Servidor funcionando");
+});
 
 /* =========================
    OBTENER INGRESOS
 ========================= */
 
-app.get("/income", (req, res) => {
+app.get("/income", async (req, res) => {
 
-  db.query("SELECT 1", (err, result) => {
+  try {
 
-    if (err) {
+    const [result] = await db.query(
+      "SELECT * FROM income ORDER BY id DESC"
+    );
 
-      console.log("ERROR SQL:");
-      console.log(err);
+    res.json(result);
 
-      res.status(500).json(err);
+  } catch (err) {
 
-    } else {
+    console.log("ERROR OBTENIENDO INGRESOS:");
+    console.log(err);
 
-      console.log("CONEXION OK");
+    res.status(500).json(err);
 
-      res.json(result);
-
-    }
-
-  });
+  }
 
 });
 
@@ -38,29 +60,30 @@ app.get("/income", (req, res) => {
    CREAR INGRESO
 ========================= */
 
-app.post("/income", (req, res) => {
+app.post("/income", async (req, res) => {
 
-  const { client, route, value, date } = req.body;
+  try {
 
-  const sql = `
-    INSERT INTO income (client, route, value, date)
-    VALUES (?, ?, ?, ?)
-  `;
+    const { client, route, value, date } = req.body;
 
-  db.query(
-    sql,
-    [client, route, value, date],
-    (err, result) => {
+    await db.query(
+      `
+      INSERT INTO income (client, route, value, date)
+      VALUES (?, ?, ?, ?)
+      `,
+      [client, route, value, date]
+    );
 
-      if (err) {
-        console.log(err);
-        res.status(500).send("Error guardando ingreso");
-      } else {
-        res.send("Ingreso guardado correctamente");
-      }
+    res.send("Ingreso guardado correctamente");
 
-    }
-  );
+  } catch (err) {
+
+    console.log("ERROR CREANDO INGRESO:");
+    console.log(err);
+
+    res.status(500).json(err);
+
+  }
 
 });
 
@@ -68,22 +91,27 @@ app.post("/income", (req, res) => {
    ELIMINAR INGRESO
 ========================= */
 
-app.delete("/income/:id", (req, res) => {
+app.delete("/income/:id", async (req, res) => {
 
-  const { id } = req.params;
+  try {
 
-  const sql = "DELETE FROM income WHERE id = ?";
+    const { id } = req.params;
 
-  db.query(sql, [id], (err, result) => {
+    await db.query(
+      "DELETE FROM income WHERE id = ?",
+      [id]
+    );
 
-    if (err) {
-      console.log(err);
-      res.status(500).send("Error eliminando ingreso");
-    } else {
-      res.send("Ingreso eliminado");
-    }
+    res.send("Ingreso eliminado");
 
-  });
+  } catch (err) {
+
+    console.log("ERROR ELIMINANDO INGRESO:");
+    console.log(err);
+
+    res.status(500).json(err);
+
+  }
 
 });
 
@@ -91,20 +119,24 @@ app.delete("/income/:id", (req, res) => {
    OBTENER GASTOS
 ========================= */
 
-app.get("/expenses", (req, res) => {
+app.get("/expenses", async (req, res) => {
 
-  const sql = "SELECT * FROM expenses ORDER BY id DESC";
+  try {
 
-  db.query(sql, (err, result) => {
+    const [result] = await db.query(
+      "SELECT * FROM expenses ORDER BY id DESC"
+    );
 
-    if (err) {
-      console.log(err);
-      res.status(500).send("Error obteniendo gastos");
-    } else {
-      res.json(result);
-    }
+    res.json(result);
 
-  });
+  } catch (err) {
+
+    console.log("ERROR OBTENIENDO GASTOS:");
+    console.log(err);
+
+    res.status(500).json(err);
+
+  }
 
 });
 
@@ -112,29 +144,30 @@ app.get("/expenses", (req, res) => {
    CREAR GASTO
 ========================= */
 
-app.post("/expenses", (req, res) => {
+app.post("/expenses", async (req, res) => {
 
-  const { type, description, value, date } = req.body;
+  try {
 
-  const sql = `
-    INSERT INTO expenses (type, description, value, date)
-    VALUES (?, ?, ?, ?)
-  `;
+    const { type, description, value, date } = req.body;
 
-  db.query(
-    sql,
-    [type, description, value, date],
-    (err, result) => {
+    await db.query(
+      `
+      INSERT INTO expenses (type, description, value, date)
+      VALUES (?, ?, ?, ?)
+      `,
+      [type, description, value, date]
+    );
 
-      if (err) {
-        console.log(err);
-        res.status(500).send("Error guardando gasto");
-      } else {
-        res.send("Gasto guardado correctamente");
-      }
+    res.send("Gasto guardado correctamente");
 
-    }
-  );
+  } catch (err) {
+
+    console.log("ERROR CREANDO GASTO:");
+    console.log(err);
+
+    res.status(500).json(err);
+
+  }
 
 });
 
@@ -142,29 +175,36 @@ app.post("/expenses", (req, res) => {
    ELIMINAR GASTO
 ========================= */
 
-app.delete("/expenses/:id", (req, res) => {
+app.delete("/expenses/:id", async (req, res) => {
 
-  const { id } = req.params;
+  try {
 
-  const sql = "DELETE FROM expenses WHERE id = ?";
+    const { id } = req.params;
 
-  db.query(sql, [id], (err, result) => {
+    await db.query(
+      "DELETE FROM expenses WHERE id = ?",
+      [id]
+    );
 
-    if (err) {
-      console.log(err);
-      res.status(500).send("Error eliminando gasto");
-    } else {
-      res.send("Gasto eliminado");
-    }
+    res.send("Gasto eliminado");
 
-  });
+  } catch (err) {
+
+    console.log("ERROR ELIMINANDO GASTO:");
+    console.log(err);
+
+    res.status(500).json(err);
+
+  }
 
 });
 
-app.get("/", (req, res) => {
-  res.send("Servidor funcionando");
-});
+/* =========================
+   PUERTO
+========================= */
 
-app.listen(3000, () => {
-  console.log("Servidor corriendo en puerto 3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
