@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
+const db = require("./db");
 
 const app = express();
 
@@ -12,16 +12,6 @@ app.use(cors());
 app.use(express.json());
 
 console.log("Servidor iniciando...");
-
-/* =========================
-   MYSQL RAILWAY
-========================= */
-
-const db = mysql
-  .createPool(process.env.DATABASE_URL)
-  .promise();
-
-console.log("Pool MySQL iniciado");
 
 /* =========================
    RUTA PRINCIPAL
@@ -47,10 +37,9 @@ app.get("/income", async (req, res) => {
 
   } catch (err) {
 
-    console.log("ERROR OBTENIENDO INGRESOS:");
     console.log(err);
 
-    res.status(500).json(err);
+    res.status(500).send("Error obteniendo ingresos");
 
   }
 
@@ -78,10 +67,9 @@ app.post("/income", async (req, res) => {
 
   } catch (err) {
 
-    console.log("ERROR CREANDO INGRESO:");
     console.log(err);
 
-    res.status(500).json(err);
+    res.status(500).send("Error guardando ingreso");
 
   }
 
@@ -106,10 +94,9 @@ app.delete("/income/:id", async (req, res) => {
 
   } catch (err) {
 
-    console.log("ERROR ELIMINANDO INGRESO:");
     console.log(err);
 
-    res.status(500).json(err);
+    res.status(500).send("Error eliminando ingreso");
 
   }
 
@@ -131,10 +118,9 @@ app.get("/expenses", async (req, res) => {
 
   } catch (err) {
 
-    console.log("ERROR OBTENIENDO GASTOS:");
     console.log(err);
 
-    res.status(500).json(err);
+    res.status(500).send("Error obteniendo gastos");
 
   }
 
@@ -162,10 +148,9 @@ app.post("/expenses", async (req, res) => {
 
   } catch (err) {
 
-    console.log("ERROR CREANDO GASTO:");
     console.log(err);
 
-    res.status(500).json(err);
+    res.status(500).send("Error guardando gasto");
 
   }
 
@@ -190,10 +175,9 @@ app.delete("/expenses/:id", async (req, res) => {
 
   } catch (err) {
 
-    console.log("ERROR ELIMINANDO GASTO:");
     console.log(err);
 
-    res.status(500).json(err);
+    res.status(500).send("Error eliminando gasto");
 
   }
 
